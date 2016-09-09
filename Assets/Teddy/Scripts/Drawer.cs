@@ -15,21 +15,20 @@ using mattatz.Triangulation2DSystem;
 
 namespace mattatz.TeddySystem.Example {
 
+	public enum OperationMode {
+		Default,
+		Draw,
+		Move
+	};
+
 	public class Drawer : MonoBehaviour {
 
 		[SerializeField, Range(0.2f, 1.5f)] float threshold = 1.0f;
 		[SerializeField] GameObject prefab;
 		[SerializeField] GameObject floor;
 		[SerializeField] Material lineMat;
-		[SerializeField] bool debugTriangles = false;
 
-		[SerializeField] Material chordMat;
-		[SerializeField] bool debugChord = false;
-		[SerializeField] bool debugPruned = true;
-		[SerializeField] int debugPruneDepth = 0;
-
-		[SerializeField] bool debugTerminal = false, debugSleeve = false, debugJunction = false;
-		[SerializeField] int networkIndex = 0;
+		OperationMode mode;
 
 		Teddy teddy;
 		List<Vector2> points;
@@ -37,7 +36,10 @@ namespace mattatz.TeddySystem.Example {
 
 		Camera cam;
 		float screenZ = 0f;
-		bool dragging;
+
+		Puppet selected;
+		Vector3 origin;
+		Vector3 startPoint;
 
 		void Start () {
 			cam = Camera.main;
@@ -53,23 +55,64 @@ namespace mattatz.TeddySystem.Example {
 			var bottom = cam.ViewportToWorldPoint(new Vector3(0.5f, 0f, screenZ));
 			floor.transform.position = bottom;
 
-			if(Input.GetMouseButtonDown(0)) {
-				dragging = true;
-				Clear();
-			} else if(Input.GetMouseButtonUp(0)) {
-				dragging = false;
-				Build();
+			var screen = Input.mousePosition;
+			screen.z = screenZ;
+
+			switch(mode) {
+
+			case OperationMode.Default:
+
+				if(Input.GetMouseButtonDown(0)) {
+					Clear();
+
+					var ray = cam.ScreenPointToRay(screen);
+					RaycastHit hit;
+					if(Physics.Raycast(ray.origin, ray.direction, out hit, float.MaxValue)) {
+						startPoint = cam.ScreenToWorldPoint(screen);;
+
+						selected = hit.collider.GetComponent<Puppet>();
+						selected.Select();
+						startPoint = hit.point;
+						origin = selected.transform.position;
+
+						mode = OperationMode.Move;
+					} else {
+						mode = OperationMode.Draw;
+					}
+				}
+
+				break;
+
+			case OperationMode.Draw:
+				if(Input.GetMouseButtonUp(0)) {
+					Build();
+					mode = OperationMode.Default;
+				} else {
+					var p = cam.ScreenToWorldPoint(screen);
+					var p2D = new Vector2(p.x, p.y);
+					if(points.Count <= 0 || Vector2.Distance(p2D, points.Last()) > threshold) {
+						points.Add(p2D);
+					}
+				}
+				break;
+
+			case OperationMode.Move:
+
+				if(Input.GetMouseButtonUp(0)) {
+					selected.Unselect();
+					selected = null;
+
+					mode = OperationMode.Default;
+				} else {
+					var currentPoint = cam.ScreenToWorldPoint(screen);
+					var offset = currentPoint - startPoint;
+					selected.transform.position = origin + offset;
+				}
+
+				break;
+
 			}
 
-			if(dragging) {
-				var screen = Input.mousePosition;
-				screen.z = screenZ;
-				var p = cam.ScreenToWorldPoint(screen);
-				var p2D = new Vector2(p.x, p.y);
-				if(points.Count <= 0 || Vector2.Distance(p2D, points.Last()) > threshold) {
-					points.Add(p2D);
-				}
-			}
 		}
 
 		void Build () {
@@ -79,8 +122,7 @@ namespace mattatz.TeddySystem.Example {
 			if(points.Count < 3) return;
 
 			teddy = new Teddy(points);
-			var mesh = teddy.Build(2, 0.1f, 0.75f);
-			// GetComponent<MeshFilter>().sharedMesh = mesh;
+			var mesh = teddy.Build(2, 0.2f, 0.75f);
 			var go = Instantiate(prefab);
 			go.transform.parent = transform;
 
@@ -91,7 +133,6 @@ namespace mattatz.TeddySystem.Example {
 
 		void Clear () {
 			points.Clear();
-			GetComponent<MeshFilter>().sharedMesh = null;
 		}
 
 		public void Save () {
@@ -107,55 +148,12 @@ namespace mattatz.TeddySystem.Example {
 		}
 
 		void OnDrawGizmos () {
-
 			if(points != null) {
 				Gizmos.color = Color.white;
 				points.ForEach(p => {
 					Gizmos.DrawSphere(p, 0.02f);
 				});
 			}
-
-			if(teddy == null) return;
-
-			#if UNITY_EDITOR
-			if(teddy.debugVertices != null) {
-				for(int i = 0, n = teddy.debugVertices.Count; i < n; i++) {
-					UnityEditor.Handles.Label(teddy.debugVertices[i].Coordinate, i.ToString());
-				}
-			}
-			#endif
-
-			if(teddy.networks != null) {
-				var networks = teddy.networks;
-				var nw = networks[Mathf.Abs(networkIndex) % networks.Count];
-				if(nw.Contour) {
-					Gizmos.color = Color.red;
-				} else {
-					Gizmos.color = Color.blue;
-				}
-				Gizmos.DrawSphere(nw.Vertex.Coordinate, 0.2f);
-				Gizmos.color = Color.white;
-				var from = nw.Vertex.Coordinate;
-				foreach(VertexNetwork2D vn in nw.Connection) {
-					Gizmos.DrawLine(from, vn.Vertex.Coordinate);
-				}
-			}
-
-			/*
-			if(teddy.network != null) {
-				var mesh = GetComponent<MeshFilter>().sharedMesh;
-				var keys = teddy.network.Keys.ToList();
-				var key = keys[Mathf.Abs(networkIndex) % keys.Count];
-				var vn = teddy.network[key];
-				var from = mesh.vertices[key];
-				Gizmos.color = Color.white;
-				foreach(int adj in vn.Connection) {
-					var to = mesh.vertices[adj];
-					Gizmos.DrawLine(from, to);
-				}
-			}
-			*/
-
 		}
 
 		void OnRenderObject () {
@@ -173,83 +171,7 @@ namespace mattatz.TeddySystem.Example {
 				GL.PopMatrix();
 			}
 
-			if(teddy == null) return;
-
-			if(teddy.triangulation != null && debugTriangles) {
-				lineMat.SetColor("_Color", Color.black);
-				DrawTriangles(teddy.triangulation.Triangles);
-			}
-
-			if(teddy.chord != null && debugChord) {
-				DrawChord2D(teddy.chord);
-			}
-
-			if(debugTerminal) {
-				lineMat.SetColor("_Color", Color.green);
-				DrawTriangles(teddy.faces.FindAll(f => f.Type == Face2DType.Terminal).Select(f => f.Triangle).ToArray());
-			}
-
-			if(debugSleeve) {
-				lineMat.SetColor("_Color", Color.yellow);
-				DrawTriangles(teddy.faces.FindAll(f => f.Type == Face2DType.Sleeve).Select(f => f.Triangle).ToArray());
-			}
-
-			if(debugJunction) {
-				lineMat.SetColor("_Color", Color.red);
-				DrawTriangles(teddy.faces.FindAll(f => f.Type == Face2DType.Junction).Select(f => f.Triangle).ToArray());
-			}
-
 		}
-
-		void DrawChord2D (Chord2D chord) {
-			GL.PushMatrix();
-			GL.MultMatrix (transform.localToWorldMatrix);
-
-			chordMat.SetPass(0);
-
-			GL.Begin(GL.LINES);
-
-			DrawChord2DRoutine(chord, null);
-
-			GL.End();
-			GL.PopMatrix();
-		}
-
-		void DrawChord2DRoutine (Chord2D chord, Chord2D from, int d = 0) {
-			if(d > debugPruneDepth) return;
-
-			if(debugPruned || !chord.Pruned) {
-				GL.TexCoord2(0f, 0f); GL.Vertex(chord.Src.Coordinate); 
-				GL.TexCoord2(0f, 1f); GL.Vertex(chord.Dst.Coordinate);
-			}
-
-			var connection = chord.Connection;
-			connection.ForEach(to => {
-				if(to != from) {
-					DrawChord2DRoutine(to, chord, d + 1);
-				}
-			});
-		}
-
-		void DrawTriangles (Triangle2D[] triangles) {
-			GL.PushMatrix();
-			GL.MultMatrix (transform.localToWorldMatrix);
-
-			lineMat.SetPass(0);
-
-			GL.Begin(GL.LINES);
-
-			for(int i = 0, n = triangles.Length; i < n; i++) {
-				var t = triangles[i];
-				GL.Vertex(t.s0.a.Coordinate); GL.Vertex(t.s0.b.Coordinate);
-				GL.Vertex(t.s1.a.Coordinate); GL.Vertex(t.s1.b.Coordinate);
-				GL.Vertex(t.s2.a.Coordinate); GL.Vertex(t.s2.b.Coordinate);
-			}
-
-			GL.End();
-			GL.PopMatrix();
-		}
-
 
 	}
 

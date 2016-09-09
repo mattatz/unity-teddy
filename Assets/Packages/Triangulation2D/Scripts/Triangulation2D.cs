@@ -63,7 +63,7 @@ namespace mattatz.Triangulation2DSystem {
 				var t = T[i];
 				int a = P.IndexOf(t.a), b = P.IndexOf(t.b), c = P.IndexOf(t.c);
 				if(a < 0 || b < 0 || c < 0) {
-					Debug.Log(a + " : " + b + " : " + c);
+					// Debug.Log(a + " : " + b + " : " + c);
 					continue;
 				}
 				if(Utils2D.LeftSide(t.a.Coordinate, t.b.Coordinate, t.c.Coordinate)) {

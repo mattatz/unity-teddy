@@ -13,14 +13,14 @@ namespace mattatz.TeddySystem {
 
 	public class Teddy {
 
-		public Polygon2D contour;
+		public List<Segment2D> contourSegments;
+
 		public Triangulation2D triangulation;
 		public List<Face2D> faces;
 		public Chord2D chord;
 		public List<VertexNetwork2D> networks;
 		Dictionary<Vertex2D, float> heightTable = new Dictionary<Vertex2D, float>();
 
-		public List<Vertex2D> debugVertices = new List<Vertex2D>();
 		public Dictionary<int, VertexConnection> network;
 
 		public Teddy (List<Vector2> points) {
@@ -30,7 +30,8 @@ namespace mattatz.TeddySystem {
 		}
 
 		void Init (Triangulation2D triangulation) {
-			contour = triangulation.Polygon;
+			contourSegments = BuildContourSegments(triangulation);
+
 			var triangles = triangulation.Triangles.ToList();
 			faces = Categorize(triangles);
 
@@ -104,12 +105,11 @@ namespace mattatz.TeddySystem {
 		}
 
 		bool ExternalSegment (Segment2D s) { 
-			var segments = contour.Segments;
-			return ContainsSegment(segments, s);
+			return ContainsSegment(contourSegments, s);
 		}
 
-		bool ContainsSegment (Segment2D[] segments, Segment2D s) {
-			for(int i = 0, n = segments.Length; i < n; i++) {
+		bool ContainsSegment (List<Segment2D> segments, Segment2D s) {
+			for(int i = 0, n = segments.Count; i < n; i++) {
 				var s2 = segments[i];
 				// if(s2.HasPoint(s.a.Coordinate) && s2.HasPoint(s.b.Coordinate)) return true;
 				if(s2.On(s.a.Coordinate) && s2.On(s.b.Coordinate)) return true;
@@ -120,13 +120,13 @@ namespace mattatz.TeddySystem {
 		}
 
 		bool ExternalPoint (Vertex2D p) {
-			var segments = contour.Segments;
-			return ContainsPoint(segments, p);
+			// var segments = contour.Segments;
+			return ContainsPoint(contourSegments, p);
 		}
 
 		const float epsilon = 0.0001f;
-		bool ContainsPoint(Segment2D[] segments, Vertex2D p) {
-			for(int i = 0, n = segments.Length; i < n; i++) {
+		bool ContainsPoint(List<Segment2D> segments, Vertex2D p) {
+			for(int i = 0, n = segments.Count; i < n; i++) {
 				var s = segments[i];
 				if(s.HasPoint(p) || s.HasPoint(p) || s.On(p)) {
 					return true;
@@ -297,7 +297,8 @@ namespace mattatz.TeddySystem {
 							ignores.Add(t.c);
 						}
 					} else {
-						Debug.LogWarning("error! ><");
+						// Debug.LogWarning("error!");
+						return;
 					}
 				}
 
@@ -534,6 +535,26 @@ namespace mattatz.TeddySystem {
 					n.Connect(networkTable[to]);
 				}
 				return n;
+			}).ToList();
+		}
+
+		List<Segment2D> BuildContourSegments (Triangulation2D triangulation) {
+			var triangles = triangulation.Triangles;
+
+			var table = new Dictionary<Segment2D, HashSet<Triangle2D>>();
+			for(int i = 0, n = triangles.Length; i < n; i++) {
+				var t = triangles[i];
+				if(!table.ContainsKey(t.s0)) table.Add(t.s0, new HashSet<Triangle2D>());
+				if(!table.ContainsKey(t.s1)) table.Add(t.s1, new HashSet<Triangle2D>());
+				if(!table.ContainsKey(t.s2)) table.Add(t.s2, new HashSet<Triangle2D>());
+
+				table[t.s0].Add(t);
+				table[t.s1].Add(t);
+				table[t.s2].Add(t);
+			}
+
+			return table.Keys.ToList().FindAll(s => {
+				return table[s].Count == 1;
 			}).ToList();
 		}
 

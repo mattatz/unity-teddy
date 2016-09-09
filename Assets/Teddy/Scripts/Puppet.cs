@@ -8,8 +8,7 @@ using System.Collections.Generic;
 
 namespace mattatz.TeddySystem.Example {
 
-	[RequireComponent (typeof(Rigidbody)) ]
-	[RequireComponent (typeof(MeshFilter)) ]
+	[RequireComponent (typeof(Rigidbody), typeof(MeshFilter), typeof(MeshRenderer)) ]
 	[RequireComponent (typeof(MeshCollider)) ]
 	public class Puppet : MonoBehaviour {
 
@@ -40,21 +39,40 @@ namespace mattatz.TeddySystem.Example {
 			}
 		}
 
+		[SerializeField] List<Color> colors;
+
 		Rigidbody _body;
 		MeshFilter _filter;
 		MeshCollider _collider;
 
-		void Start () {}
+		void Start () {
+			var rnd = GetComponent<MeshRenderer>();
+			MaterialPropertyBlock block = new MaterialPropertyBlock();
+			rnd.GetPropertyBlock(block);
+			block.SetColor("_Color", colors[Random.Range(0, colors.Count)]);
+
+			rnd.SetPropertyBlock(block);
+		}
+
 		void Update () {}
 
 		public void Ignore () {
 			col.enabled = false;
 		}
 
+		public void Select () {
+			body.isKinematic = true;
+		}
+
+		public void Unselect () {
+			body.isKinematic = false;
+		}
+
 		public void SetMesh (Mesh mesh) {
 			body.mass = mesh.bounds.size.magnitude;
 			filter.sharedMesh = mesh;
-			if(mesh.vertices.Length > 250) {
+
+			if(mesh.triangles.Length > 255 * 3) {
 				var oVertices = mesh.vertices.ToList();
 				var oTriangles = mesh.triangles.ToList();
 				int count = oTriangles.Count / 3;
