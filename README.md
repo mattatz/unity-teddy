@@ -3,7 +3,7 @@ unity-teddy
 
 Teddy algorithm (converting 2D polygon into 3D model) implementation in Unity.
 
-<img src="https://raw.githubusercontent.com/mattatz/unity-teddy/master/Captures/Demo.gif" width="350px">
+<img src="https://raw.githubusercontent.com/mattatz/unity-teddy/master/Captures/Demo.gif" width="620px">
 
 ## Usage
 
