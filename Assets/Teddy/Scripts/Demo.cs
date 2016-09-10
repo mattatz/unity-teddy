@@ -33,7 +33,7 @@ namespace mattatz.TeddySystem.Example {
 				var points = LocalStorage.LoadList<Vector2>(fileName + ".json");
 				teddy = new Teddy(points);
 				contour = BuildContourSegments(teddy.triangulation);
-				GetComponent<MeshFilter>().sharedMesh = teddy.Build(smoothingTimes, smoothingAlpha, smoothingBeta);
+				GetComponent<MeshFilter>().sharedMesh = teddy.Build(MeshSmoothingMethod.HC, smoothingTimes, smoothingAlpha, smoothingBeta);
 			}
 		}
 

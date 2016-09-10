@@ -11,6 +11,12 @@ using mattatz.MeshSmoothingSystem;
 
 namespace mattatz.TeddySystem {
 
+	public enum MeshSmoothingMethod {
+		None,
+		Laplacian,
+		HC
+	}
+
 	public class Teddy {
 
 		public List<Segment2D> contourSegments;
@@ -62,7 +68,7 @@ namespace mattatz.TeddySystem {
 			Sew(triangulation, chord, heightTable, 3);
 		}
 
-		public Mesh Build (int times = 10, float alpha = 0.2f, float beta = 0.5f) {
+		public Mesh Build (MeshSmoothingMethod method, int times = 5, float alpha = 0.2f, float beta = 0.5f) {
 			var mesh = triangulation.Build(
 				(Vertex2D v) => {
 					float z = 0f;
@@ -75,8 +81,15 @@ namespace mattatz.TeddySystem {
 
 			mesh = Symmetrize(mesh);
 
-			// mesh = MeshSmoothing.LaplacianFilter(mesh, 1);
-			mesh = MeshSmoothing.HCFilter(mesh, times, alpha, beta);
+			switch(method) {
+			case MeshSmoothingMethod.Laplacian:
+				mesh = MeshSmoothing.LaplacianFilter(mesh, times);
+				break;
+			case MeshSmoothingMethod.HC:
+				mesh = MeshSmoothing.HCFilter(mesh, times, alpha, beta);
+				break;
+			}
+
 			network = VertexConnection.BuildNetwork(mesh.triangles);
 			return mesh;
 		}
@@ -146,7 +159,6 @@ namespace mattatz.TeddySystem {
 		 * The chordal axis is obtained by connecting the midpoints of the internal edges.
 		 */
 		Chord2D GetChordalAxis (Face2D external, List<Face2D> faces) {
-
 			var t = external.Triangle;
 
 			Vertex2D src, dst;

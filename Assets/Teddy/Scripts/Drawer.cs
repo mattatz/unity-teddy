@@ -1,9 +1,5 @@
 ﻿using UnityEngine;
 
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
 using System;
 using System.IO;
 using System.Linq;
@@ -27,6 +23,7 @@ namespace mattatz.TeddySystem.Example {
 		[SerializeField] GameObject prefab;
 		[SerializeField] GameObject floor;
 		[SerializeField] Material lineMat;
+		[SerializeField] TextAsset json;
 
 		OperationMode mode;
 
@@ -46,12 +43,11 @@ namespace mattatz.TeddySystem.Example {
 			screenZ = Mathf.Abs(cam.transform.position.z - transform.position.z);
 
 			points = new List<Vector2>();
-			points = LocalStorage.LoadList<Vector2>("duck.json");
+			points = JsonUtility.FromJson<JsonSerialization<Vector2>>(json.text).ToList();
 			Build();
 		}
 
 		void Update () {
-
 			var bottom = cam.ViewportToWorldPoint(new Vector3(0.5f, 0f, screenZ));
 			floor.transform.position = bottom;
 
@@ -122,7 +118,7 @@ namespace mattatz.TeddySystem.Example {
 			if(points.Count < 3) return;
 
 			teddy = new Teddy(points);
-			var mesh = teddy.Build(2, 0.2f, 0.75f);
+			var mesh = teddy.Build(MeshSmoothingMethod.HC, 2, 0.2f, 0.75f);
 			var go = Instantiate(prefab);
 			go.transform.parent = transform;
 
