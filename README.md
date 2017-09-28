@@ -1,5 +1,7 @@
 This repository is deprecated.
-THe official release version is in the asset store!
+
+[THe official release version](https://www.assetstore.unity3d.com/#!/content/99075) is in the asset store!
+
 [Teddy](https://www.assetstore.unity3d.com/#!/content/99075)
 
 unity-teddy
