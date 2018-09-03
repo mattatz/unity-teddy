@@ -1,4 +1,6 @@
-﻿Shader "Teddy/Demo/Puppet" {
+﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
+Shader "Teddy/Demo/Puppet" {
 
 	Properties {
 		_Color ("Color", Color) = (1, 1, 1, 1)
@@ -40,7 +42,7 @@
 			v2f OUT;
 
 			v.vertex.xyz += v.normal * snoise(v.vertex.xyz * _DisplacementParams.x + float3(0, _Time.y, 0) * _DisplacementParams.y) * _DisplacementParams.z;
-			OUT.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
+			OUT.vertex = UnityObjectToClipPos(v.vertex);
 			OUT.screenPos = ComputeScreenPos(OUT.vertex);
 			OUT.uv = v.uv;
 

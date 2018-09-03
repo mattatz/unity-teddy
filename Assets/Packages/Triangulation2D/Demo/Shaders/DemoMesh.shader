@@ -1,4 +1,6 @@
-﻿Shader "Triangulation2D/Demo/Mesh" {
+﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
+Shader "Triangulation2D/Demo/Mesh" {
 
 	Properties {
 	}
@@ -27,7 +29,7 @@
 
 		v2f vert (appdata v) {
 			v2f o;
-			o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
+			o.vertex = UnityObjectToClipPos(v.vertex);
 			o.normal = mul(unity_ObjectToWorld, float4(v.normal, 0)).xyz;
 			o.uv = v.uv;
 			return o;

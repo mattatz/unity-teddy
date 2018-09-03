@@ -39,6 +39,10 @@ Mesh mesh = teddy.Build(
 
 [Demo](https://mattatz.github.io/unity/teddy)
 
+## Compatibility 
+
+tested on Unity 2018.2.6f, windows10 (GTX 1060).
+
 ## Sources
 
 - Teddy: A Sketching Interface for 3D Freeform Design - http://www-ui.is.s.u-tokyo.ac.jp/~takeo/papers/siggraph99.pdf

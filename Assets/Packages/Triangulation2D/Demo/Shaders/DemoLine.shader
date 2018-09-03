@@ -1,4 +1,6 @@
-﻿Shader "Triangulation2D/Demo/Line" {
+﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
+Shader "Triangulation2D/Demo/Line" {
 
 	Properties {
 		_Color ("Color", Color) = (0, 0, 1, 1)
@@ -30,7 +32,7 @@
 
 		v2f vert (appdata v) {
 			v2f o;
-			o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
+			o.vertex = UnityObjectToClipPos(v.vertex);
 			o.normal = v.normal;
 			o.uv = v.uv;
 			return o;

@@ -1,4 +1,6 @@
-﻿Shader "Teddy/DebugChordLine" {
+﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
+Shader "Teddy/DebugChordLine" {
 
 	Properties {
 		_Color0 ("From Color", Color) = (0, 0, 1, 1)
@@ -29,7 +31,7 @@
 
 		v2f vert (appdata v) {
 			v2f o;
-			o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
+			o.vertex = UnityObjectToClipPos(v.vertex);
 			o.uv = v.uv;
 			return o;
 		}
